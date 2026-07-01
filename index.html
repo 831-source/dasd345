@@ -8,13 +8,40 @@
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    padding: 2.5rem 1.5rem;
-    background: #ffffff;
+    padding: 2rem 1.25rem 2.5rem;
+    background: #eef3f6;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
     display: flex;
     justify-content: center;
   }
-  .wrap { width: 100%; max-width: 560px; }
+  .wrap { width: 100%; max-width: 600px; }
+
+  /* ---- Scene ---- */
+  .scene-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 2px 10px rgba(30,40,60,0.06);
+    margin-bottom: 1.75rem;
+  }
+  .scene-wrap {
+    position: relative;
+    width: 100%;
+    border-radius: 12px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #cfe6ef 0%, #e8f2f6 55%, #ffffff 55%, #ffffff 100%);
+  }
+  .scene-wrap svg { display: block; width: 100%; height: auto; }
+  .scene-caption {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 4px 0;
+  }
+  .scene-title { font-size: 13px; font-weight: 600; color: #3a4550; }
+  .scene-pct { font-size: 12px; color: #8b97a3; }
+
+  /* ---- Header / gauge ---- */
   .header-row {
     display: flex;
     align-items: baseline;
@@ -26,16 +53,18 @@
   .gauge-track {
     height: 6px;
     border-radius: 3px;
-    background: #e6e3d9;
+    background: #e0e8ee;
     overflow: hidden;
     margin-bottom: 2rem;
   }
   .gauge-fill {
     height: 100%;
     width: 0%;
-    background: #b9b6ac;
-    transition: width 0.2s;
+    background: #7fb2c9;
+    transition: width 0.4s ease;
   }
+
+  /* ---- Grid ---- */
   .grid {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
@@ -53,7 +82,7 @@
     width: 34px;
     height: 34px;
     border-radius: 50%;
-    border: 1px solid #c9c6ba;
+    border: 1px solid #c9d3da;
     background: transparent;
     display: flex;
     align-items: center;
@@ -62,18 +91,31 @@
     cursor: pointer;
   }
   .circle-btn.done {
-    border: 1px solid #dedddd;
-    background: #dedddd;
+    border: 1px solid #bcd8e3;
+    background: #bcd8e3;
   }
   .circle-btn svg { display: none; width: 16px; height: 16px; }
   .circle-btn.done svg { display: block; }
   @media (min-width: 400px) {
     .grid { column-gap: 10px; }
   }
+
+  #save-state { font-size: 12px; margin-top: 1.25rem; min-height: 14px; }
 </style>
 </head>
 <body>
 <div class="wrap">
+
+  <div class="scene-card">
+    <div class="scene-wrap">
+      <svg id="scene-svg" viewBox="0 0 600 220" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="scene-caption">
+      <div class="scene-title">목표 지점까지</div>
+      <div class="scene-pct" id="scene-pct">0%</div>
+    </div>
+  </div>
+
   <div class="header-row">
     <div class="title">천일문 Sentence Structure Review</div>
     <div class="progress-label" id="progress-label">0 / 16</div>
@@ -82,7 +124,7 @@
     <div class="gauge-fill" id="gauge-fill"></div>
   </div>
   <div class="grid" id="grid"></div>
-  <div id="save-state" style="font-size:12px; margin-top:1.25rem; min-height:14px;"></div>
+  <div id="save-state"></div>
 </div>
 
 <script>
@@ -93,7 +135,7 @@
   let fullData = {};
 
   function checkIconSvg() {
-    return '<svg viewBox="0 0 24 24" fill="none" stroke="#5f5e5a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="#3a5566" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
   }
 
   function load() {
@@ -137,11 +179,142 @@
     render();
   }
 
+  /* ---------------- Scene rendering ---------------- */
+
+  function pineTree(x, y, scale, snowy) {
+    // x,y = base center point
+    const s = scale;
+    let g = '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">';
+    g += '<rect x="-4" y="-8" width="8" height="14" fill="#6b4a35"/>';
+    g += '<polygon points="0,-70 -26,-30 -14,-30 -32,-4 -18,-4 -36,20 36,20 18,-4 32,-4 14,-30 26,-30" fill="#2f7a4f"/>';
+    if (snowy) {
+      g += '<polygon points="0,-70 -12,-46 12,-46" fill="#f4fafc"/>';
+      g += '<polygon points="-30,-6 -18,-6 -24,-18" fill="#f4fafc"/>';
+      g += '<polygon points="30,-6 18,-6 24,-18" fill="#f4fafc"/>';
+      g += '<polygon points="-34,18 34,18 24,4 -24,4" fill="none"/>';
+      g += '<polygon points="-24,4 24,4 12,-10 -12,-10" fill="#f4fafc" opacity="0.9"/>';
+    }
+    g += '</g>';
+    return g;
+  }
+
+  function flagPole(x, y) {
+    let g = '<g transform="translate(' + x + ',' + y + ')">';
+    g += '<rect x="-2" y="-64" width="4" height="64" fill="#8a8f96"/>';
+    g += '<polygon points="2,-64 34,-54 2,-44" fill="#e0644f"/>';
+    g += '<ellipse cx="0" cy="1" rx="14" ry="4" fill="#dfe9ee"/>';
+    g += '</g>';
+    return g;
+  }
+
+  // simple blocky pixel-style character, distinguished by hat color
+  function pixelCharacter(x, y, hatColor, coatColor, bump, chubby, hooded, squareHat) {
+    // bump: small vertical bob for "walking" liveliness
+    const b = bump || 0;
+    const w = chubby ? 30 : 22;
+    const halfW = w / 2;
+    let g = '<g transform="translate(' + x + ',' + (y + b) + ')">';
+    // shadow
+    g += '<ellipse cx="0" cy="2" rx="' + (chubby ? 16 : 13) + '" ry="3" fill="rgba(40,50,60,0.12)"/>';
+    // legs
+    g += '<rect x="' + (-halfW + 3) + '" y="-14" width="6" height="14" fill="#3d4a55"/>';
+    g += '<rect x="' + (halfW - 9) + '" y="-14" width="6" height="14" fill="#3d4a55"/>';
+    // coat body
+    if (chubby) {
+      g += '<rect x="' + -halfW + '" y="-36" width="' + w + '" height="24" rx="6" fill="' + coatColor + '"/>';
+    } else {
+      g += '<rect x="-11" y="-34" width="22" height="22" rx="3" fill="' + coatColor + '"/>';
+    }
+    // arms
+    g += '<rect x="' + (-halfW - 4) + '" y="-32" width="5" height="14" rx="2" fill="' + coatColor + '"/>';
+    g += '<rect x="' + (halfW - 1) + '" y="-32" width="5" height="14" rx="2" fill="' + coatColor + '"/>';
+    // head
+    const headW = chubby ? 20 : 18;
+    g += '<rect x="' + (-headW / 2) + '" y="-52" width="' + headW + '" height="18" rx="4" fill="#f4d3a8"/>';
+    if (hooded) {
+      // hood: coat-colored ring around face, no eyes/hat drawn separately, small face opening
+      g += '<path d="M ' + (-headW/2 - 4) + ' -34 Q ' + (-headW/2 - 6) + ' -60 0 -62 Q ' + (headW/2 + 6) + ' -60 ' + (headW/2 + 4) + ' -34 L ' + (headW/2 + 1) + ' -34 Q ' + (headW/2 + 1) + ' -55 0 -56 Q ' + (-headW/2 - 1) + ' -55 ' + (-headW/2 - 1) + ' -34 Z" fill="' + coatColor + '"/>';
+      // eyes peeking out
+      g += '<rect x="-5" y="-44" width="3" height="3" fill="#2c2c2a"/>';
+      g += '<rect x="2" y="-44" width="3" height="3" fill="#2c2c2a"/>';
+    } else {
+      // eyes
+      g += '<rect x="-5" y="-45" width="3" height="3" fill="#2c2c2a"/>';
+      g += '<rect x="2" y="-45" width="3" height="3" fill="#2c2c2a"/>';
+      // hat
+      if (squareHat) {
+        g += '<rect x="' + (-headW / 2 - 1) + '" y="-60" width="' + (headW + 2) + '" height="12" fill="' + hatColor + '"/>';
+      } else {
+        g += '<rect x="' + (-headW / 2 - 1) + '" y="-58" width="' + (headW + 2) + '" height="9" rx="3" fill="' + hatColor + '"/>';
+        g += '<circle cx="0" cy="-59" r="3.2" fill="' + hatColor + '"/>';
+      }
+    }
+    g += '</g>';
+    return g;
+  }
+
+  function buildScene(doneCount) {
+    const pct = doneCount / TOTAL;
+    const startX = 60, endX = 500, baseY = 178;
+
+    let svg = '';
+    // sky already via CSS gradient background of wrapper, ground line
+    svg += '<rect x="0" y="0" width="600" height="220" fill="none"/>';
+
+    // ground
+    svg += '<rect x="0" y="176" width="600" height="44" fill="#ffffff"/>';
+    svg += '<rect x="0" y="172" width="600" height="6" fill="#f2f8fb"/>';
+
+    // trees (fixed decorative, snowy)
+    const treeSpots = [
+      [20,180,0.4],[40,178,0.5],[70,184,0.32],[95,182,0.4],[120,177,0.3],[150,176,0.35],
+      [180,183,0.34],[420,182,0.34],[450,177,0.3],[470,178,0.4],[495,183,0.32],[520,182,0.5],
+      [545,177,0.3],[560,176,0.38],[585,181,0.36]
+    ];
+    treeSpots.forEach(function (t) { svg += pineTree(t[0], t[1], t[2], true); });
+
+    // falling snow (fixed decorative dots)
+    const snowSpots = [
+      [20,20,2],[60,40,1.5],[110,15,2.2],[160,55,1.6],[210,25,2],[260,45,1.4],
+      [310,18,2.1],[360,50,1.7],[410,30,2],[460,20,1.6],[510,48,2.2],[560,28,1.5],
+      [30,90,1.4],[90,100,1.8],[150,85,1.3],[220,105,1.6],[290,88,1.4],[350,102,1.8],
+      [420,90,1.4],[480,100,1.7],[540,85,1.5],[580,60,1.6],[10,60,1.7],[250,15,1.5]
+    ];
+    snowSpots.forEach(function (s) {
+      svg += '<circle cx="' + s[0] + '" cy="' + s[1] + '" r="' + s[2] + '" fill="#ffffff" opacity="0.9"/>';
+    });
+
+    // path dots from start to goal
+    svg += '<line x1="' + startX + '" y1="' + baseY + '" x2="' + endX + '" y2="' + baseY + '" stroke="#dbe6ec" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>';
+
+    // flag/goal
+    svg += flagPole(endX + 20, baseY + 2);
+
+    // characters, spaced slightly apart, all move together toward goal based on pct
+    const hats = ['#4a6fa5', '#3f8f5e', '#5fbfa0', '#4a6fa5'];
+    const coats = ['#8a5a3c', '#e0913a', '#c94e3e', '#e0913a'];
+    const chubbyFlags = [false, false, true, false];
+    const hoodedFlags = [false, false, false, true];
+    const squareHatFlags = [false, true, false, false];
+    const offsets = [-54, -18, 18, 54];
+    const travel = endX - startX - 60;
+
+    offsets.forEach(function (off, i) {
+      const cx = startX + travel * pct + off;
+      const bob = pct > 0 ? (i % 2 === 0 ? -2 : 0) : 0;
+      svg += pixelCharacter(cx, baseY, hats[i], coats[i], bob, chubbyFlags[i], hoodedFlags[i], squareHatFlags[i]);
+    });
+
+    return svg;
+  }
+
   function render() {
     const done = chapters.filter(Boolean).length;
     const pct = Math.round((done / TOTAL) * 100);
     document.getElementById('progress-label').textContent = done + ' / ' + TOTAL;
     document.getElementById('gauge-fill').style.width = pct + '%';
+    document.getElementById('scene-pct').textContent = pct + '%';
+    document.getElementById('scene-svg').innerHTML = buildScene(done);
 
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
