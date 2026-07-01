@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>천일문 Sentence Structure Review</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 2.5rem 1.5rem;
+    background: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+    display: flex;
+    justify-content: center;
+  }
+  .wrap { width: 100%; max-width: 560px; }
+  .header-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+  }
+  .title { font-size: 16px; font-weight: 600; color: #2c2c2a; }
+  .progress-label { font-size: 13px; color: #888780; }
+  .gauge-track {
+    height: 6px;
+    border-radius: 3px;
+    background: #e6e3d9;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+  .gauge-fill {
+    height: 100%;
+    width: 0%;
+    background: #b9b6ac;
+    transition: width 0.2s;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    row-gap: 1.75rem;
+    column-gap: 8px;
+  }
+  .cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .num { font-size: 11px; color: #a3a199; }
+  .circle-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1px solid #c9c6ba;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    cursor: pointer;
+  }
+  .circle-btn.done {
+    border: 1px solid #dedddd;
+    background: #dedddd;
+  }
+  .circle-btn svg { display: none; width: 16px; height: 16px; }
+  .circle-btn.done svg { display: block; }
+  @media (min-width: 400px) {
+    .grid { column-gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header-row">
+    <div class="title">천일문 Sentence Structure Review</div>
+    <div class="progress-label" id="progress-label">0 / 16</div>
+  </div>
+  <div class="gauge-track">
+    <div class="gauge-fill" id="gauge-fill"></div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div id="save-state" style="font-size:12px; margin-top:1.25rem; min-height:14px;"></div>
+</div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'english-goal-tracker-data';
+  const TOTAL = 16;
+  let chapters = new Array(TOTAL).fill(false);
+  let fullData = {};
+
+  function checkIconSvg() {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="#5f5e5a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        fullData = JSON.parse(raw);
+        if (fullData.chunilmun && Array.isArray(fullData.chunilmun.chapters)) {
+          chapters = fullData.chunilmun.chapters;
+        }
+      }
+    } catch (e) {}
+    while (chapters.length < TOTAL) chapters.push(false);
+    render();
+  }
+
+  function save() {
+    try {
+      fullData.chunilmun = { chapters };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(fullData));
+      showSaveState('ok');
+    } catch (e) {
+      showSaveState('error');
+    }
+  }
+
+  function showSaveState(state) {
+    const el = document.getElementById('save-state');
+    if (!el) return;
+    if (state === 'error') {
+      el.textContent = '저장 실패, 브라우저 저장소를 확인해주세요';
+      el.style.color = '#c0392b';
+    } else {
+      el.textContent = '';
+    }
+  }
+
+  function toggle(i) {
+    chapters[i] = !chapters[i];
+    save();
+    render();
+  }
+
+  function render() {
+    const done = chapters.filter(Boolean).length;
+    const pct = Math.round((done / TOTAL) * 100);
+    document.getElementById('progress-label').textContent = done + ' / ' + TOTAL;
+    document.getElementById('gauge-fill').style.width = pct + '%';
+
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    chapters.forEach((isDone, i) => {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+
+      const num = document.createElement('div');
+      num.className = 'num';
+      num.textContent = (i + 1);
+
+      const btn = document.createElement('button');
+      btn.className = 'circle-btn' + (isDone ? ' done' : '');
+      btn.setAttribute('aria-label', (i + 1) + '장 완료 체크');
+      btn.innerHTML = checkIconSvg();
+      btn.addEventListener('click', () => toggle(i));
+
+      cell.appendChild(num);
+      cell.appendChild(btn);
+      grid.appendChild(cell);
+    });
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>
